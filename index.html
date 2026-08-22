@@ -40,6 +40,8 @@
     a { color: var(--green); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
+    h2 { color: var(--green); }
+
     /* ── NAV ── */
     nav {
       position: sticky; top: 0; z-index: 100;
@@ -151,6 +153,7 @@
     .btn-primary:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.2); text-decoration: none; }
     .btn-secondary {
       border: 2px solid rgba(255,255,255,0.5); color: var(--white);
+      background: rgba(0,0,0,0.25);
       font-weight: 600; font-size: 1rem;
       padding: 0.75rem 1.75rem; border-radius: 8px;
       transition: border-color 0.15s;
@@ -290,7 +293,8 @@
       box-shadow: var(--shadow);
     }
     /* Leaflet popup styling */
-    .park-popup { font-family: 'Nunito', system-ui, sans-serif; min-width: 160px; }
+    .park-popup { font-family: 'Nunito', system-ui, sans-serif; min-width: 160px; display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+    .park-popup-icon { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
     .park-popup b { display: block; font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--text); }
     .park-popup a { font-size: 0.85rem; color: var(--green); font-weight: 600; }
 
@@ -317,7 +321,7 @@
       text-align: center;
       padding: 5rem 1.5rem;
     }
-    #cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+    #cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: var(--white); }
     #cta p { color: rgba(255,255,255,0.8); max-width: 500px; margin: 0 auto 2rem; }
     .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
@@ -335,14 +339,19 @@
       .nav-links { display: none; }
     }
     @media (max-width: 1024px) {
-      #hero-hand { display: none; }
-      #hero-text { width: 100%; padding: 2rem 3rem; }
+      #hero-hand { height: 80%; right: 0; z-index: 1; }
+      #hero-text { width: 70%; padding: 2rem 3rem; }
       #hero-overlay { background: rgba(20, 50, 20, 0.65); }
     }
     @media (max-width: 680px) {
       #what .container,
       #ownership .container { grid-template-columns: 1fr; gap: 2rem; }
       nav { padding: 0 1rem; }
+    }
+    @media (max-width: 640px) {
+      #hero-text { width: 100%; align-items: flex-start; text-align: left; }
+      .hero-actions { justify-content: flex-start; }
+      #hero-hand { height: 50%; }
     }
   </style>
 </head>
@@ -359,7 +368,7 @@
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#how">How it works</a>
-    <a href="#parks">Parks using it</a>
+    <a href="#parks">Examples</a>
   </div>
   <a href="https://github.com/fjordaan/park-treemap" target="_blank" rel="noopener" class="nav-cta">Get started →</a>
 </nav>
@@ -378,7 +387,7 @@
       </div>
     </div>
   </section>
-  <img id="hero-hand" src="hand-cutout.png" alt="">
+  <img id="hero-hand" src="hand-cutout-lighter.png" alt="Hand holding a smartphone with the park-treemap app, in the background we can see a tranquil park">
 </div>
 
 <!-- WHAT IS IT -->
@@ -421,7 +430,7 @@
       <div class="feature-card">
         <div class="feature-icon">🔍</div>
         <h3>Rich filtering</h3>
-        <p>Filter by scientific name, common name, condition, form, or tag. Share a link that preserves your exact filter selection.</p>
+        <p>Filter by scientific name, common name, condition, form, calendar month, or tag. Share a link that preserves your exact filter selection.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎨</div>
@@ -433,10 +442,15 @@
         <h3>Special markers</h3>
         <p>Highlight new plantings, notable trees, or trees that still need identification, each with its own distinct marker style.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" style="display:none">
         <div class="feature-icon">📅</div>
         <h3>Seasonal filtering</h3>
         <p>Filter the map to see which trees are at their best in any given month, such as spring blossoms or autumn colour.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Feedback and editing</h3>
+        <p>Visitors can submit feedback for any tree. Enrolled editors can update content wherever they are.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔒</div>
@@ -548,6 +562,7 @@
     { name: 'Fulham Cemetery',               lat: 51.48047,   lng: -0.2165562, url: 'https://trees.fulhamcemeteryfriends.org.uk/' },
     { name: 'Bayonne Park',                  lat: 51.485142,  lng: -0.215255,  url: 'https://twynholmtra.github.io/bayonne-trees/' },
     { name: 'Lillie Road Recreation Ground', lat: 51.4827750, lng: -0.2176881, url: 'https://boonoit.github.io/Reposi-tree/' },
+    { name: 'Normand Park',                  lat: 51.484604,  lng: -0.206704,  url: 'https://twynholmtra.github.io/normand-park/' },
   ];
 
   const map = L.map('parks-map', { scrollWheelZoom: false }).setView([51.4835, -0.2168], 15);
@@ -564,8 +579,15 @@
   });
 
   parks.forEach(p => {
+    const iconUrl = new URL('icons/icon-192.png', p.url).href;
     L.marker([p.lat, p.lng], { icon })
-      .bindPopup(`<div class="park-popup"><b>${p.name}</b><a href="${p.url}" target="_blank" rel="noopener">Open map ↗</a></div>`)
+      .bindPopup(
+        `<div class="park-popup">` +
+          `<img class="park-popup-icon" src="${iconUrl}" alt="" onerror="this.remove()">` +
+          `<div><b>${p.name}</b><a href="${p.url}" target="_blank" rel="noopener">Open map ↗</a></div>` +
+        `</div>`,
+        { maxWidth: 400 }
+      )
       .addTo(map);
   });
 </script>
